@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "seed": "node seedDatabase.js",
     "healthcheck": "node healthcheck.js",
+    "deploy:fly": "./deploy-fly.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
