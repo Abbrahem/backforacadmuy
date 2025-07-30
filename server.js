@@ -7,12 +7,53 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  'http://localhost:3001',
+  'https://localhost:3001',
+  'https://areeb-kappa.vercel.app',
+  'https://areeb-f6ns.vercel.app',
+  'https://*.vercel.app',
+  'https://*.vercel.app/*',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+// Simple CORS setup - Allow all origins for now
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  origin: true, // Allow all origins
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Additional CORS headers middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow Vercel domains and localhost
+  if (origin && (origin.includes('vercel.app') || origin.includes('localhost'))) {
+    res.header('Access-Control-Allow-Origin', origin);
+    console.log('✅ CORS header set for origin:', origin);
+  } else if (origin) {
+    // Allow any origin for now
+    res.header('Access-Control-Allow-Origin', origin);
+    console.log('⚠️ CORS header set for unknown origin:', origin);
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'false'); // Changed to false
+  
+  if (req.method === 'OPTIONS') {
+    console.log('✅ Preflight request handled');
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // MongoDB Connection with retry logic
 const connectDB = async () => {
@@ -97,6 +138,7 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5002;
+const NODE_ENV = process.env.NODE_ENV || 'production';
 
 // Start server only after successful MongoDB connection
 const startServer = async () => {
